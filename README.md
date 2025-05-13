@@ -20,17 +20,19 @@ A powerful tool for automatically checking the availability of Discord usernames
 
 ## Features
 
-- **Automated Username Checking**: Types usernames from a wordlist directly into Discord's username field
+- **Dual-Mode Username Checking**:
+  - **File Sniper**: Types usernames from a wordlist directly into Discord's username field
+  - **Random Sniper**: Generates and checks random 3-4 letter usernames
 - **Visual Detection System**: Uses advanced color detection to identify Discord's success/error messages
 - **Visual Border Overlay**: Shows precisely which area is being monitored
 - **Real-time Discord Notifications**: Sends webhooks when available usernames are found
 - **Colorful Console Interface**: Shows progress with a user-friendly ASCII art interface
 - **Stable Window Management**: Designed to work well alongside Discord without interference
+- **Smart Input Field Management**: Automatically cleans the input field between attempts
 
 ## Demo
 
 [Showcase](https://streamable.com/5dr8i5)
-
 
 ## Requirements
 
@@ -61,7 +63,7 @@ A powerful tool for automatically checking the availability of Discord usernames
    pip install -r requirements.txt
    ```
 
-3. **Create a wordlist**:
+3. **Create a wordlist** (for File Sniper mode):
    Create a file named `words.txt` in the project directory with one username per line.
    
 4. **Set up Discord webhook** (optional):
@@ -79,15 +81,19 @@ A powerful tool for automatically checking the availability of Discord usernames
    run.bat
    ```
 
-2. **Enter your webhook URL** (if prompted)
+2. **Choose your sniper mode**:
+   - **1) File Sniper**: Uses usernames from your words.txt file
+   - **2) Random Sniper**: Generates random 3-4 letter usernames
 
-3. **Focus on Discord's username change field**:
+3. **Enter your webhook URL** (if prompted)
+
+4. **Focus on Discord's username change field**:
    - Navigate to Discord's username change screen
    - You have 10 seconds to focus on the username input field
    - The script will highlight the detection area with a colored border
 
-4. **Checking Process**:
-   - The script will start typing usernames from your wordlist
+5. **Checking Process**:
+   - The script will start checking usernames based on your chosen mode
    - Available usernames will be logged and sent to your Discord webhook
    - Press ESC at any time to stop the process
 
