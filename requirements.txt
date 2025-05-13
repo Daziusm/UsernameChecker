@@ -1,0 +1,6 @@
+pyautogui
+numpy
+keyboard
+pillow
+pywin32
+requests

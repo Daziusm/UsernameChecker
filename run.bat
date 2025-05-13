@@ -1,0 +1,6 @@
+@echo off
+echo Checking for required packages...
+pip install -r requirements.txt
+echo Starting the script...
+python random_word_typer.py
+pause 
