@@ -124,6 +124,75 @@ When an available username is found, the tool sends a detailed webhook message t
 - Timestamp information
 - Custom embedded image
 
+## Technical Implementation
+
+### Advanced Color Detection
+
+The tool uses a sophisticated color detection system that works in multiple layers:
+
+1. **Primary Color Detection**:
+   - Uses predefined Discord-specific colors for exact matching
+   - Implements color distance calculations to handle slight variations
+   - Maintains separate color lists for different message types:
+     - Success (green) colors
+     - Error (red) colors
+     - Warning (yellow) colors
+     - UI element colors
+
+2. **Pixel Analysis**:
+   - Performs pixel-by-pixel analysis of the detection area
+   - Uses numpy arrays for efficient color processing
+   - Implements color distance thresholds for accurate detection:
+     - 30-35 units for error messages
+     - 40-45 units for success messages
+     - 20 units for UI elements
+
+3. **Text Color Detection**:
+   - Specialized function to detect colored text on dark backgrounds
+   - Analyzes pixel distribution to identify text colors
+   - Filters out background colors to focus on text elements
+   - Uses color frequency analysis to determine dominant text colors
+
+### Username Analysis
+
+The tool performs real-time analysis of usernames:
+
+1. **Complexity Analysis**:
+   - Length calculation
+   - Character type detection (numbers, special characters)
+   - Complexity categorization:
+     - Simple: Alphanumeric only
+     - Medium: Contains numbers or special characters
+     - Complex: Contains both numbers and special characters
+
+2. **Webhook Integration**:
+   - Real-time notifications with detailed embeds
+   - Includes:
+     - Username statistics
+     - Timestamp information
+     - Complexity metrics
+     - Visual indicators
+   - Uses Discord's timestamp formatting for accurate time display
+
+### Performance Optimizations
+
+The tool implements several optimizations for efficient operation:
+
+1. **Color Detection**:
+   - Prioritizes checking most common Discord colors first
+   - Uses early returns when clear signals are detected
+   - Implements color caching to reduce redundant calculations
+
+2. **Window Management**:
+   - Uses Win32 API for efficient window handling
+   - Implements borderless overlay for minimal resource usage
+   - Maintains window state without interfering with Discord
+
+3. **Resource Management**:
+   - Efficient screenshot capture and processing
+   - Optimized color distance calculations
+   - Smart cleanup of temporary resources
+
 ## Configuration Options
 
 ### Modify Resolution Settings
