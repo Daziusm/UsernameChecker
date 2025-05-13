@@ -29,7 +29,7 @@ A powerful tool for automatically checking the availability of Discord usernames
 
 ## Demo
 
-[Showcase](https://streamable.com/lpsz49)
+[Showcase](https://streamable.com/5dr8i5)
 
 
 ## Requirements
