@@ -47,7 +47,7 @@ def debug_log(msg):
 should_exit = False
 
 # Webhook configuration
-WEBHOOK_URL = "https://discord.com/api/webhooks/1371602961549103205/U93uZRcep9Nf2YNEjuUMtGTRm3QbiZMA8TcLwdbFJfNy_tYdZ0fVBRYv2op56Cs3lpg-"
+WEBHOOK_URL = "YOUR_TOKEN_HERE"
 SNIPE_IMAGE_URL = "https://raw.githubusercontent.com/Daziusm/Daziusm/refs/heads/main/sniped.jpg"
 
 # Resolution-specific positions
