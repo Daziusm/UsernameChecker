@@ -27,6 +27,11 @@ A powerful tool for automatically checking the availability of Discord usernames
 - **Colorful Console Interface**: Shows progress with a user-friendly ASCII art interface
 - **Stable Window Management**: Designed to work well alongside Discord without interference
 
+ ## Demo
+
+   ![Showcase]((https://streamable.com/lpsz49))
+
+
 ## Requirements
 
 - Python 3.6+
