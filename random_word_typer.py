@@ -47,7 +47,7 @@ def debug_log(msg):
 should_exit = False
 
 # Webhook configuration
-WEBHOOK_URL = "YOUR_TOKEN_HERE"
+WEBHOOK_URL = ""
 SNIPE_IMAGE_URL = "https://raw.githubusercontent.com/Daziusm/Daziusm/refs/heads/main/sniped.jpg"
 
 # Resolution-specific positions
@@ -275,6 +275,26 @@ def generate_random_username(length):
     """Generate a random username of specified length"""
     return ''.join(random.choices(string.ascii_lowercase, k=length))
 
+def generate_3letter_username():
+    """Generate a random 3-letter username"""
+    return ''.join(random.choices(string.ascii_lowercase, k=3))
+
+def generate_4letter_username():
+    """Generate a random 4-letter username"""
+    return ''.join(random.choices(string.ascii_lowercase, k=4))
+
+def verify_webhook_url(url):
+    """Verify if the webhook URL is valid and active"""
+    if not url or url == "YOUR_DISCORD_WEBHOOK_URL_HERE" or "discord.com/api/webhooks/" not in url:
+        return False
+    
+    try:
+        # Send a basic GET request to check if the webhook exists
+        response = requests.get(url)
+        return response.status_code == 200
+    except:
+        return False
+
 class UsernameChecker:
     def __init__(self, mode="file", words_file="words.txt", delay=2):
         """Initialize the username checker"""
@@ -285,7 +305,7 @@ class UsernameChecker:
         
         if mode == "file":
             self.words = load_words(words_file)
-        else:  # random mode
+        else:  # random mode (3letter or 4letter)
             self.words = []  # Will generate on the fly
         
         # Get box position based on resolution
@@ -320,10 +340,10 @@ class UsernameChecker:
             if not self.words:
                 return None
             return self.words.pop(0)
-        else:  # random mode
-            # Generate 3 or 4 letter random username
-            length = random.choice([3, 4])
-            return generate_random_username(length)
+        elif self.mode == "3letter":
+            return generate_3letter_username()
+        elif self.mode == "4letter":
+            return generate_4letter_username()
 
     def check_color(self):
         """Check the color in the monitoring box to determine username validity"""
@@ -372,25 +392,33 @@ class UsernameChecker:
         print(Colors.CYAN + center_text(ASCII_TITLE, term_width) + Colors.END)
         print_separator("=", term_width)
         
-        # Show progress
-        progress_percent = int((index / total) * 100)
-        progress_bar = f"[{'#' * int(progress_percent / 2)}{' ' * (50 - int(progress_percent / 2))}]"
+        # Show progress with enhanced colorful bar
+        progress_percent = int((index / total) * 100) if total > 0 else 0
+        filled_length = int(progress_percent / 2)  # Half of 100%
+        empty_length = 50 - filled_length
         
-        print_status(f"Checking username: {Colors.BOLD}{word}{Colors.END}", centered=False)
-        print_status(f"Progress: {progress_bar} {progress_percent}%", centered=False)
-        print_status(f"Checked: {index}/{total}", centered=False)
+        # Create a colorful progress bar
+        filled_bar = Colors.GREEN + "#" * filled_length + Colors.END
+        empty_bar = "-" * empty_length
+        progress_bar = f"[{filled_bar}{empty_bar}] {progress_percent}%"
         
-        # Show status if available
+        print("\n" + Colors.BOLD + "PROGRESS" + Colors.END)
+        print_separator("-", term_width)
+        print_status(f"Checking username: {Colors.BOLD}{Colors.YELLOW}{word}{Colors.END}", centered=False)
+        print_status(f"Progress: {progress_bar}", centered=False)
+        print_status(f"Checked: {index}/{total if total != 1000 else 'unlimited'}", centered=False)
+        
+        # Show status if available with emoji and colors
         if status:
             status_color = Colors.YELLOW
-            status_text = "UNKNOWN"
+            status_text = "UNKNOWN ❓"
             
             if status == "GREEN":
                 status_color = Colors.GREEN
-                status_text = "AVAILABLE ✓"
+                status_text = "AVAILABLE ✅"
             elif status == "RED":
                 status_color = Colors.RED
-                status_text = "UNAVAILABLE ✗"
+                status_text = "UNAVAILABLE ❌"
                 
             print_status(f"Status: {status_color}{status_text}{Colors.END}", centered=False)
         
@@ -399,11 +427,12 @@ class UsernameChecker:
             print_separator("-", term_width)
             print_status(f"Valid usernames found so far: {len(self.valid_usernames)}", color=Colors.GREEN, centered=False)
             
-            # Show the last 5 valid usernames
+            # Show the last 5 valid usernames with bullet points
+            print("\n" + Colors.GREEN + "VALID USERNAMES:" + Colors.END)
             show_count = min(5, len(self.valid_usernames))
             for i in range(show_count):
                 username = self.valid_usernames[-(i+1)]  # Show most recent first
-                print_status(f"  ► {username}", color=Colors.GREEN, centered=False)
+                print_status(f"  ▶ {username}", color=Colors.GREEN, centered=False)
         
         print_separator("=", term_width)
         print_status("Press ESC to stop", color=Colors.YELLOW, centered=False)
@@ -453,7 +482,16 @@ class UsernameChecker:
         clear_screen()
         print(Colors.CYAN + center_text(ASCII_TITLE, self.terminal_width) + Colors.END)
         print_separator("=", self.terminal_width)
-        print_status(f"Starting username checker in {self.mode} mode...", color=Colors.GREEN)
+        
+        # Show mode-specific message
+        if self.mode == "file":
+            mode_message = "Starting username checker in File Sniper mode..."
+        elif self.mode == "3letter":
+            mode_message = "Starting username checker in 3-Letter Generator mode..."
+        elif self.mode == "4letter":
+            mode_message = "Starting username checker in 4-Letter Generator mode..."
+        
+        print_status(mode_message, color=Colors.GREEN)
         print_status("Press ESC to stop", color=Colors.YELLOW)
         
         # Register ESC key handler
@@ -461,6 +499,7 @@ class UsernameChecker:
         
         # Set counter
         attempts = 0
+        total = len(self.words) if self.mode == "file" else 1000  # Default value for random modes
         
         try:
             while not should_exit:
@@ -476,8 +515,11 @@ class UsernameChecker:
                 # Type the word using the method that cleans the field first
                 self.type_username(word)
                 
-                # Check color
-                status = self.check_color()
+                # Check color with multiple attempts for better accuracy
+                status = self.check_color_with_verification()
+                
+                # Display progress with enhanced progress bar
+                self.display_progress(word, attempts, total, status)
                 
                 # Handle result
                 if status == "GREEN":
@@ -502,6 +544,31 @@ class UsernameChecker:
         # Wait for a key press
         print_status("Press any key to exit...", color=Colors.YELLOW, centered=False)
         keyboard.read_key()
+    
+    def check_color_with_verification(self):
+        """Check the color with multiple attempts for accuracy"""
+        # Take multiple samples to reduce false detections
+        color_samples = []
+        for _ in range(3):  # Check 3 times
+            status, _ = check_single_color(self.monitoring_box)
+            color_samples.append(status)
+            time.sleep(0.1)  # Short pause between checks
+        
+        # If any sample is GREEN, prioritize it (fix false RED detection)
+        if "GREEN" in color_samples:
+            debug_log(f"Color verification: Found GREEN in samples {color_samples}")
+            return "GREEN"
+        
+        # If consistent RED, return RED
+        if color_samples.count("RED") >= 2:
+            debug_log(f"Color verification: Confirmed RED in samples {color_samples}")
+            return "RED"
+        
+        # Default to the most common result
+        from collections import Counter
+        most_common = Counter(color_samples).most_common(1)[0][0]
+        debug_log(f"Color verification: Most common color in samples {color_samples} is {most_common}")
+        return most_common
 
 def show_menu():
     """Display the main menu and get user choice"""
@@ -510,13 +577,30 @@ def show_menu():
     print_separator("=", term_width)
     print_status("Choose sniper mode:", color=Colors.YELLOW)
     print("\n1) File Sniper - Snipes words from words.txt")
-    print("2) Random Sniper - Generates 3-4 letter random usernames")
+    print("2) 3-4 Letter Generator")
     
     while True:
         choice = input("\nEnter your choice (1 or 2): ").strip()
-        if choice in ['1', '2']:
-            return 'file' if choice == '1' else 'random'
-        print_status("Invalid choice. Please enter 1 or 2.", color=Colors.RED)
+        if choice == '1':
+            return 'file'
+        elif choice == '2':
+            # Show submenu for letter generator
+            clear_screen()
+            print(Colors.CYAN + center_text(ASCII_TITLE, term_width) + Colors.END)
+            print_separator("=", term_width)
+            print_status("Choose letter generator mode:", color=Colors.YELLOW)
+            print("\n1) 3-Letter Generator")
+            print("2) 4-Letter Generator")
+            
+            while True:
+                sub_choice = input("\nEnter your choice (1 or 2): ").strip()
+                if sub_choice == '1':
+                    return '3letter'
+                elif sub_choice == '2':
+                    return '4letter'
+                print_status("Invalid choice. Please enter 1 or 2.", color=Colors.RED)
+        else:
+            print_status("Invalid choice. Please enter 1 or 2.", color=Colors.RED)
 
 if __name__ == "__main__":
     # Make console window stay on top
@@ -535,13 +619,29 @@ if __name__ == "__main__":
     # Create checker instance
     checker = UsernameChecker(mode=mode, words_file="words.txt", delay=2)
     
-    # Ask for webhook URL if not set
-    if WEBHOOK_URL == "YOUR_DISCORD_WEBHOOK_URL_HERE":
-        print_status("Please enter your Discord webhook URL:", color=Colors.YELLOW)
-        webhook_url = input(center_text("> ", term_width))
-        if webhook_url:
-            WEBHOOK_URL = webhook_url
-            print_status("Webhook URL set successfully!", color=Colors.GREEN)
+    # Validate webhook URL
+    webhook_valid = verify_webhook_url(WEBHOOK_URL)
+    
+    # Ask for webhook URL if not set or invalid
+    if not webhook_valid:
+        print_separator("-", term_width)
+        print_status("⚠️ WARNING: Webhook URL is not valid or not set! ⚠️", color=Colors.RED, centered=True)
+        print_status("Valid usernames will not be reported to Discord.", color=Colors.YELLOW, centered=True)
+        print_separator("-", term_width)
+        print_status("Would you like to enter a valid webhook URL? (y/n)", color=Colors.YELLOW)
+        choice = input(center_text("> ", term_width)).strip().lower()
+        
+        if choice == 'y':
+            print_status("Please enter your Discord webhook URL:", color=Colors.YELLOW)
+            webhook_url = input(center_text("> ", term_width))
+            if webhook_url and verify_webhook_url(webhook_url):
+                WEBHOOK_URL = webhook_url
+                print_status("Webhook URL verified and set successfully!", color=Colors.GREEN)
+                webhook_valid = True
+            else:
+                print_status("Invalid webhook URL. Continuing without webhook notifications.", color=Colors.RED)
+    else:
+        print_status("✓ Webhook URL is valid and active!", color=Colors.GREEN)
     
     # Short pause before starting
     print_status("Press any key to start checking usernames...", color=Colors.GREEN)
