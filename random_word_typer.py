@@ -17,6 +17,7 @@ import win32gui
 import win32con
 import subprocess   
 import socket   
+import string
 from color_detector_visual import check_single_color, SimpleBorder
 
 # ASCII Art for the title
@@ -46,7 +47,7 @@ def debug_log(msg):
 should_exit = False
 
 # Webhook configuration
-WEBHOOK_URL = "YOUR_TOKEN_HERE"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1371602961549103205/U93uZRcep9Nf2YNEjuUMtGTRm3QbiZMA8TcLwdbFJfNy_tYdZ0fVBRYv2op56Cs3lpg-"
 SNIPE_IMAGE_URL = "https://raw.githubusercontent.com/Daziusm/Daziusm/refs/heads/main/sniped.jpg"
 
 # Resolution-specific positions
@@ -270,13 +271,22 @@ def make_console_topmost():
     except Exception as e:
         print_status(f"Warning: Could not set window to topmost: {str(e)}", color=Colors.YELLOW)
 
+def generate_random_username(length):
+    """Generate a random username of specified length"""
+    return ''.join(random.choices(string.ascii_lowercase, k=length))
+
 class UsernameChecker:
-    def __init__(self, words_file="words.txt", delay=2):
+    def __init__(self, mode="file", words_file="words.txt", delay=2):
         """Initialize the username checker"""
-        self.words = load_words(words_file)
+        self.mode = mode
         self.delay = delay
         self.valid_usernames = []
         self.current_word = ""
+        
+        if mode == "file":
+            self.words = load_words(words_file)
+        else:  # random mode
+            self.words = []  # Will generate on the fly
         
         # Get box position based on resolution
         self.monitoring_box = get_box_position()
@@ -292,7 +302,7 @@ class UsernameChecker:
             self.monitoring_box[1],
             self.monitoring_box[2],
             self.monitoring_box[3],
-            border_thickness=4  # Increased thickness
+            border_thickness=4
         )
         
         debug_log("Border created successfully")
@@ -303,7 +313,18 @@ class UsernameChecker:
             self.terminal_width = os.get_terminal_size().columns
         except:
             pass
-    
+
+    def get_next_word(self):
+        """Get the next word to check based on mode"""
+        if self.mode == "file":
+            if not self.words:
+                return None
+            return self.words.pop(0)
+        else:  # random mode
+            # Generate 3 or 4 letter random username
+            length = random.choice([3, 4])
+            return generate_random_username(length)
+
     def check_color(self):
         """Check the color in the monitoring box to determine username validity"""
         # Refresh the border to ensure it stays on top
@@ -432,71 +453,36 @@ class UsernameChecker:
         clear_screen()
         print(Colors.CYAN + center_text(ASCII_TITLE, self.terminal_width) + Colors.END)
         print_separator("=", self.terminal_width)
-        print_status("Starting username checker...", color=Colors.GREEN)
+        print_status(f"Starting username checker in {self.mode} mode...", color=Colors.GREEN)
         print_status("Press ESC to stop", color=Colors.YELLOW)
         
         # Register ESC key handler
         keyboard.on_press_key('esc', on_esc_press)
         
-        # Shuffle the words to check in random order
-        random.shuffle(self.words)
-        
-        # Total number of words to check
-        total_words = len(self.words)
-        if max_attempts and max_attempts < total_words:
-            total_words = max_attempts
-        
         # Set counter
         attempts = 0
         
         try:
-            # Give user time to focus on Discord username field
-            print_separator("-", self.terminal_width)
-            print_status("You have 10 seconds to focus on Discord's username field...", color=Colors.YELLOW)
-            
-            for i in range(10, 0, -1):
-                if should_exit:
-                    break
-                print_status(f"{i}...", color=Colors.YELLOW, centered=False)
-                time.sleep(1)
-            
-            if not should_exit:
-                print_status("Starting to check usernames...", color=Colors.GREEN)
-                time.sleep(0.5)
-            
-            # Start checking usernames
-            for i, word in enumerate(self.words):
-                if should_exit:
-                    print_status("ESC pressed. Stopping...", color=Colors.RED)
+            while not should_exit:
+                # Get next word
+                word = self.get_next_word()
+                if word is None:
                     break
                 
+                # Check if we've reached max attempts
                 if max_attempts and attempts >= max_attempts:
-                    print_status(f"Reached maximum attempts ({max_attempts}). Stopping...", color=Colors.YELLOW)
                     break
                 
-                # Display progress (with no status yet)
-                self.display_progress(word, i+1, total_words)
-                
-                # Type the word
+                # Type the word using the method that cleans the field first
                 self.type_username(word)
                 
-                # Wait for Discord to show validation message
-                time.sleep(self.delay)
-                
-                # Check color status
+                # Check color
                 status = self.check_color()
-                
-                # Display updated progress with status
-                self.display_progress(word, i+1, total_words, status)
                 
                 # Handle result
                 if status == "GREEN":
                     self.valid_usernames.append(word)
-                    
-                    # Log for debugging purposes
                     debug_log(f"FOUND VALID USERNAME: {word}")
-                    
-                    # Send webhook for the valid username
                     send_webhook(word)
                 
                 attempts += 1
@@ -517,6 +503,21 @@ class UsernameChecker:
         print_status("Press any key to exit...", color=Colors.YELLOW, centered=False)
         keyboard.read_key()
 
+def show_menu():
+    """Display the main menu and get user choice"""
+    clear_screen()
+    print(Colors.CYAN + center_text(ASCII_TITLE, term_width) + Colors.END)
+    print_separator("=", term_width)
+    print_status("Choose sniper mode:", color=Colors.YELLOW)
+    print("\n1) File Sniper - Snipes words from words.txt")
+    print("2) Random Sniper - Generates 3-4 letter random usernames")
+    
+    while True:
+        choice = input("\nEnter your choice (1 or 2): ").strip()
+        if choice in ['1', '2']:
+            return 'file' if choice == '1' else 'random'
+        print_status("Invalid choice. Please enter 1 or 2.", color=Colors.RED)
+
 if __name__ == "__main__":
     # Make console window stay on top
     make_console_topmost()
@@ -528,13 +529,11 @@ if __name__ == "__main__":
     except:
         pass
     
-    # Initial welcome screen
-    clear_screen()
-    print(Colors.CYAN + center_text(ASCII_TITLE, term_width) + Colors.END)
-    print_separator("=", term_width)
+    # Show menu and get mode
+    mode = show_menu()
     
     # Create checker instance
-    checker = UsernameChecker(words_file="words.txt", delay=2)
+    checker = UsernameChecker(mode=mode, words_file="words.txt", delay=2)
     
     # Ask for webhook URL if not set
     if WEBHOOK_URL == "YOUR_DISCORD_WEBHOOK_URL_HERE":
