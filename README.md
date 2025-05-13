@@ -45,17 +45,6 @@ A powerful tool for automatically checking the availability of Discord usernames
 
 ## Installation
 
-1. **Clone the repository**:
-   ```
-   git clone https://github.com/Daziusm/UsernameChecker.git
-   cd UsernameChecker
-   ```
-
-2. **Install dependencies**:
-   ```
-   pip install -r requirements.txt
-   ```
-
 3. **Create a wordlist**:
    Create a file named `words.txt` in the project directory with one username per line.
    
