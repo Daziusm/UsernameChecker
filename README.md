@@ -1,4 +1,4 @@
-# Discord Username Checker
+# Discord Username Checker - *OUTDATED, NOT IN SUPPORT UNLESS U FIX IT URSELF OR KNOW WHAT UR DOING!!!* 
 
 ```
  _   _                                       
